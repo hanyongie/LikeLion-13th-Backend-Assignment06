@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .sessionManagement(sessionManagement ->sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers("/login/oauth2/**").permitAll()
+                        .requestMatchers("/login/oauth2/code/google").permitAll()
+                        .requestMatchers("/").permitAll()
                         .requestMatchers("/members/**").permitAll() // members로 시작하는 경로는 허용
                         .requestMatchers("/posts/**").permitAll() // posts도 허용
                         .requestMatchers("/","/index.html").permitAll()

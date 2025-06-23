@@ -8,9 +8,12 @@ import com.likelion.likelionassignmentoauth.member.domain.repository.MemberRepos
 import com.likelion.likelionassignmentoauth.oauth.api.dto.Token;
 import com.likelion.likelionassignmentoauth.oauth.api.dto.UserInfo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -18,6 +21,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthLoginService {
 /*
     // 컨트롤러에서 받은 authorization code와 소셜 로그인 id를 받아 콘솔에 출력
@@ -36,22 +40,32 @@ public class AuthLoginService {
     private final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
     // OAuth 인증 후 구글이 리디렉션할 URI
     private final String GOOGLE_REDIRECT_URI = "https://hanyong00.shop/login/oauth2/code/google";
+//    private final String GOOGLE_REDIRECT_URI = "http://localhost:8080/login/oauth2/code/google";
+
 
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     public String getGoogleAccessToken(String code) {
         RestTemplate restTemplate = new RestTemplate();
-        Map<String, String> params = Map.of(
-                "code", code,
-                "scope", "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-                "client_id", GOOGLE_CLIENT_ID,
-                "client_secret", GOOGLE_CLIENT_SECRET,
-                "redirect_uri", GOOGLE_REDIRECT_URI,
-                "grant_type", "authorization_code"
-        );
 
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity(GOOGLE_TOKEN_URL, params, String.class);
+        // Header 설정
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        // Form body로 구성
+        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
+        formParams.add("code", code);
+        formParams.add("client_id", GOOGLE_CLIENT_ID);
+        formParams.add("client_secret", GOOGLE_CLIENT_SECRET);
+        formParams.add("redirect_uri", GOOGLE_REDIRECT_URI);
+        formParams.add("grant_type", "authorization_code");
+
+        // 요청 엔티티 만들기
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formParams, headers);
+
+        // POST 요청
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(GOOGLE_TOKEN_URL, requestEntity, String.class);
 
         if(responseEntity.getStatusCode().is2xxSuccessful()) {
             String json = responseEntity.getBody();
@@ -60,6 +74,8 @@ public class AuthLoginService {
             return gson.fromJson(json, Token.class)
                     .getAccessToken();
         }
+
+        log.error("구글 토큰 요청 실패: {}", responseEntity);
         throw new RuntimeException("구글 엑세스 토큰을 가져오는데 실패했습니다.");
     }
 
