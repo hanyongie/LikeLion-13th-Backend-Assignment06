@@ -48,24 +48,16 @@ public class AuthLoginService {
 
     public String getGoogleAccessToken(String code) {
         RestTemplate restTemplate = new RestTemplate();
+        Map<String, String> params = Map.of(
+                "code", code,
+                "scope", "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+                "client_id", GOOGLE_CLIENT_ID,
+                "client_secret", GOOGLE_CLIENT_SECRET,
+                "redirect_uri", GOOGLE_REDIRECT_URI,
+                "grant_type", "authorization_code"
+        );
 
-        // Header 설정
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        // Form body로 구성
-        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
-        formParams.add("code", code);
-        formParams.add("client_id", GOOGLE_CLIENT_ID);
-        formParams.add("client_secret", GOOGLE_CLIENT_SECRET);
-        formParams.add("redirect_uri", GOOGLE_REDIRECT_URI);
-        formParams.add("grant_type", "authorization_code");
-
-        // 요청 엔티티 만들기
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formParams, headers);
-
-        // POST 요청
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity(GOOGLE_TOKEN_URL, requestEntity, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(GOOGLE_TOKEN_URL, params, String.class);
 
         if(responseEntity.getStatusCode().is2xxSuccessful()) {
             String json = responseEntity.getBody();
